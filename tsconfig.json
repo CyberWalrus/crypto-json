@@ -1,0 +1,40 @@
+{
+    "extends": "@cyber-walrus/typescript-config/tsconfig.json",
+    "compilerOptions": {
+        "typeRoots": [
+            "./node_modules/@types/",
+            "./types",
+            "./node_modules"
+        ],
+        "types": [
+            "vitest/globals"
+        ],
+        "baseUrl": "./",
+        "paths": {
+            "$public/*": [
+                "public/*"
+            ],
+            "$*": [
+                "src/*"
+            ]
+        },
+        "rootDirs": [
+            ".",
+            "__generated__"
+        ],
+    },
+    "include": [
+        "src",
+        "types",
+        "storybook",
+        "scripts",
+        "vitest.setup.ts",
+        ".eslintrc.cjs",
+        "*.config.js",
+        "*.config.cjs",
+        "*.config.ts"
+    ],
+    "exclude": [
+        "node_modules"
+    ],
+}

@@ -1,0 +1,79 @@
+name: NodeJS with Vite
+
+on:
+  push:
+    branches: [ "main" ]
+  pull_request:
+    branches: [ "main" ]
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+jobs:
+  build:
+
+    runs-on: ubuntu-latest
+    container:
+      image: mcr.microsoft.com/playwright:v1.41.2-jammy
+
+    strategy:
+      matrix:
+        node-version: [20.x]
+
+    steps:
+    - uses: actions/checkout@v3
+
+    - name: Replace Characters in Repository Name
+      run: |
+        ORIGINAL_VALUE="${{ github.repository }}/"
+        MODIFIED_VALUE="${ORIGINAL_VALUE/${{ github.repository_owner }}/}"
+        echo "BASE_PATH=$MODIFIED_VALUE" >> $GITHUB_ENV
+        echo "BASE_URL="https://${{ github.repository_owner }}.github.io$MODIFIED_VALUE"" >> $GITHUB_ENV
+      shell: bash
+
+    - name: Use Node.js ${{ matrix.node-version }}
+      uses: actions/setup-node@v3
+      with:
+        node-version: ${{ matrix.node-version }}
+
+    - name: Install dependencies
+      run: yarn install --frozen-lockfile
+
+    - name: Run Linters
+      run: yarn lint:check
+
+    - name: Build the project
+      id: build
+      run: yarn build
+
+    - name: Run Tests
+      run: yarn test
+
+    - name: Upload src/app/__screenshots__ as artifact if tests fail
+      if: failure()
+      uses: actions/upload-artifact@v3
+      with:
+        name: failed-test-artifacts
+        path: ./src/app/__screenshots__
+
+    - name: Build with Jekyll
+      uses: actions/jekyll-build-pages@v1
+      with:
+        source: ./dist
+        destination: ./_site
+
+    - name: Upload artifact
+      uses: actions/upload-pages-artifact@v1
+
+  deploy:
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    runs-on: ubuntu-latest
+    needs: build
+    steps:
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v1
